@@ -42,7 +42,7 @@ public class CouponResource {
         @RequestBody @Valid final ApplicationRequestDTO applicationRequestDTO) {
 
         log.info("Applying coupon");
-
+        // something wrong here
         final Optional<Basket> basket =
             couponService.apply(applicationRequestDTO.getBasket(), applicationRequestDTO.getCode());
 
