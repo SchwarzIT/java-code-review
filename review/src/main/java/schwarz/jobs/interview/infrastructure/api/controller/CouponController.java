@@ -16,8 +16,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import schwarz.jobs.interview.coupon.core.domain.Coupon;
-import schwarz.jobs.interview.coupon.core.services.CouponService;
+import schwarz.jobs.interview.coupon.core.domain.CouponEntity;
+import schwarz.jobs.interview.coupon.core.services.CouponDBAdapter;
 import schwarz.jobs.interview.coupon.core.services.model.Basket;
 import schwarz.jobs.interview.coupon.web.dto.ApplicationRequestDTO;
 import schwarz.jobs.interview.coupon.web.dto.CouponDTO;
@@ -27,9 +27,9 @@ import schwarz.jobs.interview.coupon.web.dto.CouponRequestDTO;
 @RequiredArgsConstructor
 @RequestMapping("/api")
 @Slf4j
-public class CouponResource {
+public class CouponController {
 
-    private final CouponService couponService;
+    private final CouponDBAdapter couponDBAdapter;
 
     /**
      * @param applicationRequestDTO
@@ -44,7 +44,7 @@ public class CouponResource {
         log.info("Applying coupon");
 
         final Optional<Basket> basket =
-            couponService.apply(applicationRequestDTO.getBasket(), applicationRequestDTO.getCode());
+            couponDBAdapter.apply(applicationRequestDTO.getBasket(), applicationRequestDTO.getCode());
 
         if (basket.isEmpty()) {
             return ResponseEntity.notFound().build();
@@ -62,14 +62,14 @@ public class CouponResource {
     @PostMapping("/create")
     public ResponseEntity<Void> create(@RequestBody @Valid final CouponDTO couponDTO) {
 
-        final Coupon coupon = couponService.createCoupon(couponDTO);
+        final CouponEntity coupon = couponDBAdapter.createCoupon(couponDTO);
 
         return ResponseEntity.ok().build();
     }
 
     @GetMapping("/coupons")
-    public List<Coupon> getCoupons(@RequestBody @Valid final CouponRequestDTO couponRequestDTO) {
+    public List<CouponEntity> getCoupons(@RequestBody @Valid final CouponRequestDTO couponRequestDTO) {
 
-        return couponService.getCoupons(couponRequestDTO);
+        return couponDBAdapter.getCoupons(couponRequestDTO);
     }
 }

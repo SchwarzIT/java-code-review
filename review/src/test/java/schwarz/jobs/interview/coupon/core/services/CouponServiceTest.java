@@ -27,6 +27,8 @@ import schwarz.jobs.interview.coupon.web.dto.CouponRequestDTO;
 @ExtendWith(SpringExtension.class)
 public class CouponServiceTest {
 
+    // TODO revisar c/test porque asi como esta no aplica GHERKIN (Given, When, Then)
+
     @InjectMocks
     private CouponService couponService;
 
@@ -106,7 +108,7 @@ public class CouponServiceTest {
                 .minBasketValue(BigDecimal.valueOf(50))
                 .build()));
 
-        List<Coupon> returnedCoupons = couponService.getCoupons(dto);
+        List<CouponEntity> returnedCoupons = couponService.getCoupons(dto);
 
         assertThat(returnedCoupons.get(0).getCode()).isEqualTo("1111");
 

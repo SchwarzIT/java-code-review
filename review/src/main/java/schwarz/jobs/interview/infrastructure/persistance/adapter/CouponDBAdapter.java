@@ -7,7 +7,7 @@ import java.util.Optional;
 import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
-import schwarz.jobs.interview.coupon.core.domain.Coupon;
+import schwarz.jobs.interview.coupon.core.domain.CouponEntity;
 import schwarz.jobs.interview.coupon.core.repository.CouponRepository;
 import schwarz.jobs.interview.coupon.core.services.model.Basket;
 import schwarz.jobs.interview.coupon.web.dto.CouponDTO;
@@ -15,11 +15,11 @@ import schwarz.jobs.interview.coupon.web.dto.CouponRequestDTO;
 
 @Service
 @RequiredArgsConstructor
-public class CouponService {
+public class CouponDBAdapter {
 
     private final CouponRepository couponRepository;
 
-    public Optional<Coupon> getCoupon(final String code) {
+    public Optional<CouponEntity> getCoupon(final String code) {
         return couponRepository.findByCode(code);
     }
 
@@ -46,12 +46,12 @@ public class CouponService {
         });
     }
 
-    public Coupon createCoupon(final CouponDTO couponDTO) {
+    public CouponEntity createCoupon(final CouponDTO couponDTO) {
 
-        Coupon coupon = null;
+        CouponEntity coupon = null;
 
         try {
-            coupon = Coupon.builder()
+            coupon = CouponEntity.builder()
                 .code(couponDTO.getCode().toLowerCase())
                 .discount(couponDTO.getDiscount())
                 .minBasketValue(couponDTO.getMinBasketValue())
@@ -65,9 +65,9 @@ public class CouponService {
         return couponRepository.save(coupon);
     }
 
-    public List<Coupon> getCoupons(final CouponRequestDTO couponRequestDTO) {
+    public List<CouponEntity> getCoupons(final CouponRequestDTO couponRequestDTO) {
 
-        final ArrayList<Coupon> foundCoupons = new ArrayList<>();
+        final ArrayList<CouponEntity> foundCoupons = new ArrayList<>();
 
         couponRequestDTO.getCodes().forEach(code -> foundCoupons.add(couponRepository.findByCode(code).get()));
 
