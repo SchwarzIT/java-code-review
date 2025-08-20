@@ -4,23 +4,25 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import org.springframework.stereotype.Service;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.stereotype.Component;
 
 import lombok.RequiredArgsConstructor;
+import schwarz.jobs.interview.domain.model.Coupon;
+import schwarz.jobs.interview.domain.model.CreateCouponRequest;
+import schwarz.jobs.interview.domain.repository.CouponRepository;
 import schwarz.jobs.interview.infrastructure.api.dto.Basket;
-import schwarz.jobs.interview.infrastructure.api.dto.CouponDTO;
-import schwarz.jobs.interview.infrastructure.api.dto.CouponRequestDTO;
 import schwarz.jobs.interview.infrastructure.persistance.jpa.entity.CouponEntity;
-import schwarz.jobs.interview.infrastructure.persistance.jpa.repository.CouponRepository;
+import schwarz.jobs.interview.infrastructure.persistance.jpa.repository.CouponDBRepository;
 
-@Service
 @RequiredArgsConstructor
-public class CouponDBAdapter {
+@Component
+public class CouponDBAdapter implements CouponRepository {
 
-    private final CouponRepository couponRepository;
+    private final CouponDBRepository couponDBRepository;
 
     public Optional<CouponEntity> getCoupon(final String code) {
-        return couponRepository.findByCode(code);
+        return couponDBRepository.findByCodeIgnoreCase(code);
     }
 
     public Optional<Basket> apply(final Basket basket, final String code) {
@@ -46,31 +48,37 @@ public class CouponDBAdapter {
         });
     }
 
-    public CouponEntity createCoupon(final CouponDTO couponDTO) {
-
-        CouponEntity coupon = null;
-
-        try {
-            coupon = CouponEntity.builder()
-                .code(couponDTO.getCode().toLowerCase())
-                .discount(couponDTO.getDiscount())
-                .minBasketValue(couponDTO.getMinBasketValue())
+    @NotNull
+    @Override
+    public Coupon createCoupon(CreateCouponRequest request) {
+        CouponEntity coupon = CouponEntity.builder()
+                .code(request.getCode())
+                .discount(request.getDiscount())
+                .minBasketValue(request.getMinBasketValue())
                 .build();
 
-        } catch (final NullPointerException e) {
-
-            // Don't coupon when code is null
-        }
-
-        return couponRepository.save(coupon);
+        CouponEntity savedCoupon = couponDBRepository.save(coupon);
+        return new Coupon(
+                savedCoupon.getCode(),
+                savedCoupon.getDiscount(),
+                savedCoupon.getMinBasketValue()
+        );
     }
 
-    public List<CouponEntity> getCoupons(List<String> codes) {
+    @NotNull
+    @Override
+    public List<Coupon> getCoupons(List<String> codes) {
 
         final ArrayList<CouponEntity> foundCoupons = new ArrayList<>();
 
-        codes.forEach(code -> foundCoupons.add(couponRepository.findByCode(code).get()));
+        codes.forEach(code -> foundCoupons.add(couponDBRepository.findByCodeIgnoreCase(code).get()));
 
-        return foundCoupons;
+        return foundCoupons.stream().map(couponEntity ->
+                new Coupon(
+                        couponEntity.getCode(),
+                        couponEntity.getDiscount(),
+                        couponEntity.getMinBasketValue()
+                )
+        ).toList();
     }
 }
