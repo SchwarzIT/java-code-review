@@ -5,6 +5,12 @@ spring:
         username: sa
         password: password
         database-platform: org.hibernate.dialect.H2Dialect
+    jpa:
+        hibernate:
+            ddl-auto: create-drop
+            naming:
+                physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+        defer-datasource-initialization: true
     h2:
         console:
             enabled: true
@@ -14,3 +20,7 @@ spring:
                 web-allow-others: false
     main:
         web-application-type: servlet
+
+server:
+    servlet:
+        context-path: /api

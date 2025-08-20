@@ -1,4 +1,4 @@
-package schwarz.jobs.interview.coupon.web;
+package schwarz.jobs.interview.infrastructure.api.controller;
 
 
 import java.util.List;
@@ -8,28 +8,30 @@ import jakarta.validation.Valid;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import schwarz.jobs.interview.application.usecase.GetCouponUseCase;
+import schwarz.jobs.interview.infrastructure.api.dto.ApplicationRequestDTO;
+import schwarz.jobs.interview.infrastructure.api.dto.Basket;
+import schwarz.jobs.interview.infrastructure.api.dto.CouponDTO;
+import schwarz.jobs.interview.infrastructure.persistance.adapter.CouponDBAdapter;
+import schwarz.jobs.interview.infrastructure.persistance.jpa.entity.CouponEntity;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import schwarz.jobs.interview.coupon.core.domain.CouponEntity;
-import schwarz.jobs.interview.coupon.core.services.CouponDBAdapter;
-import schwarz.jobs.interview.coupon.core.services.model.Basket;
-import schwarz.jobs.interview.coupon.web.dto.ApplicationRequestDTO;
-import schwarz.jobs.interview.coupon.web.dto.CouponDTO;
-import schwarz.jobs.interview.coupon.web.dto.CouponRequestDTO;
-
-@Controller
+@RestController
 @RequiredArgsConstructor
-@RequestMapping("/api")
+@RequestMapping("/coupons")
 @Slf4j
 public class CouponController {
 
     private final CouponDBAdapter couponDBAdapter;
+    private final GetCouponUseCase getCouponUseCase;
 
     /**
      * @param applicationRequestDTO
@@ -59,7 +61,7 @@ public class CouponController {
         return ResponseEntity.ok().body(applicationRequestDTO.getBasket());
     }
 
-    @PostMapping("/create")
+    @PostMapping()
     public ResponseEntity<Void> create(@RequestBody @Valid final CouponDTO couponDTO) {
 
         final CouponEntity coupon = couponDBAdapter.createCoupon(couponDTO);
@@ -67,9 +69,9 @@ public class CouponController {
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping("/coupons")
-    public List<CouponEntity> getCoupons(@RequestBody @Valid final CouponRequestDTO couponRequestDTO) {
-
-        return couponDBAdapter.getCoupons(couponRequestDTO);
+    @GetMapping()
+    public List<CouponEntity> getCoupons(@RequestParam List<String> codes) {
+        System.out.println(getCouponUseCase.invoke(codes));
+        return couponDBAdapter.getCoupons(codes);
     }
 }
