@@ -8,12 +8,6 @@ data class CouponDTO(
     val discount: BigDecimal,
     val minBasketValue: BigDecimal,
 ) {
-    fun toDomainModel(): Coupon = Coupon(
-        code = this.code,
-        discount = this.discount,
-        minBasketValue = this.minBasketValue,
-    )
-
     companion object {
         fun fromDomain(coupon: Coupon): CouponDTO = CouponDTO(
             code = coupon.code,
