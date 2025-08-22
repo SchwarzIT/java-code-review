@@ -2,7 +2,6 @@ package schwarz.jobs.interview.infrastructure.api.controller;
 
 
 import java.util.List;
-import java.util.Optional;
 
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
@@ -21,11 +20,9 @@ import org.springframework.web.bind.annotation.RestController;
 import schwarz.jobs.interview.application.usecase.ApplyCouponUseCase;
 import schwarz.jobs.interview.application.usecase.CreateCouponUseCase;
 import schwarz.jobs.interview.application.usecase.GetCouponsUseCase;
-import schwarz.jobs.interview.domain.model.Basket;
 import schwarz.jobs.interview.infrastructure.api.dto.ApplicationRequestDTO;
-import schwarz.jobs.interview.infrastructure.api.dto.BasketDTO;
-import schwarz.jobs.interview.infrastructure.api.dto.BasketRequestDTO;
-import schwarz.jobs.interview.infrastructure.api.dto.CouponDTO;
+import schwarz.jobs.interview.application.dto.BasketDTO;
+import schwarz.jobs.interview.application.dto.CouponDTO;
 import schwarz.jobs.interview.infrastructure.api.dto.CreateCouponRequestDTO;
 import schwarz.jobs.interview.infrastructure.persistance.adapter.CouponDBAdapter;
 

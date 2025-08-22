@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
+import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.http.HttpStatus;
@@ -64,6 +65,7 @@ public class CouponDBAdapter implements CouponRepository {
 
     @NotNull
     @Override
+    @Transactional
     public Coupon createCoupon(CreateCouponRequest request) {
         CouponEntity coupon = CouponEntity.builder()
                 .code(request.getCode())

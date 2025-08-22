@@ -1,4 +1,4 @@
-package schwarz.jobs.interview.infrastructure.api.dto
+package schwarz.jobs.interview.application.dto
 
 import schwarz.jobs.interview.domain.model.Coupon
 import java.math.BigDecimal

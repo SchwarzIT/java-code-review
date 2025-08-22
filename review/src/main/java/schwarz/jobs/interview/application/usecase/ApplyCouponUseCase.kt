@@ -4,7 +4,7 @@ import org.springframework.stereotype.Service
 import schwarz.jobs.interview.domain.model.Basket
 import schwarz.jobs.interview.domain.repository.CouponRepository
 import schwarz.jobs.interview.infrastructure.api.dto.ApplicationRequestDTO
-import schwarz.jobs.interview.infrastructure.api.dto.BasketDTO
+import schwarz.jobs.interview.application.dto.BasketDTO
 
 @Service
 class ApplyCouponUseCase(
