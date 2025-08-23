@@ -4,12 +4,14 @@ import java.math.BigDecimal;
 
 import jakarta.validation.constraints.NotNull;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import schwarz.jobs.interview.domain.model.CreateCouponRequest;
 
 @Data
 @Builder
+@AllArgsConstructor
 public class CreateCouponRequestDTO {
     @NotNull
     private String code;

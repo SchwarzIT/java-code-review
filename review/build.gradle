@@ -42,7 +42,7 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok'
 
     // Swagger/OpenAPI
-    implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0"
+    implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0"
 
     //H2
     runtimeOnly 'com.h2database:h2'
@@ -51,6 +51,9 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testImplementation 'io.mockk:mockk:1.13.8'
+    testImplementation 'io.mockk:mockk-jvm:1.13.8'
+    testImplementation 'org.jeasy:easy-random-core:5.0.0'
 }
 
 compileKotlin {

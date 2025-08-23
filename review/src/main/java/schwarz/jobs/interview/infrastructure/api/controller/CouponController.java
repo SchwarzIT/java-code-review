@@ -24,7 +24,6 @@ import schwarz.jobs.interview.infrastructure.api.dto.ApplicationRequestDTO;
 import schwarz.jobs.interview.application.dto.BasketDTO;
 import schwarz.jobs.interview.application.dto.CouponDTO;
 import schwarz.jobs.interview.infrastructure.api.dto.CreateCouponRequestDTO;
-import schwarz.jobs.interview.infrastructure.persistance.adapter.CouponDBAdapter;
 
 @RestController
 @RequiredArgsConstructor
@@ -32,7 +31,6 @@ import schwarz.jobs.interview.infrastructure.persistance.adapter.CouponDBAdapter
 @Slf4j
 public class CouponController {
 
-    private final CouponDBAdapter couponDBAdapter;
     private final GetCouponsUseCase getCouponsUseCase;
     private final CreateCouponUseCase createCouponsUseCase;
     private final ApplyCouponUseCase applyCouponUseCase;
@@ -49,10 +47,10 @@ public class CouponController {
 
     @Operation(summary = "Create a coupon")
     @PostMapping()
-    public ResponseEntity<CouponDTO> create(@RequestBody @Valid final CreateCouponRequestDTO couponDTO) {
+    public ResponseEntity<CouponDTO> create(@RequestBody @Valid final CreateCouponRequestDTO couponRequestDTO) {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(createCouponsUseCase.invoke(couponDTO));
+                .body(createCouponsUseCase.invoke(couponRequestDTO));
     }
 
     @Operation(summary = "Get coupon list")

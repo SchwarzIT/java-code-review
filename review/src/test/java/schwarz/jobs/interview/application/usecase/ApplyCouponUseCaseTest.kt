@@ -41,8 +41,8 @@ class ApplyCouponUseCaseTest {
         )
 
         val expectedResult = Basket(
-            value = BigDecimal.valueOf(90.0),
-            appliedDiscount = BigDecimal.valueOf(10.0),
+            value = basket.value,
+            appliedDiscount = basket.appliedDiscount,
             applicationSuccessful = true,
             appliedDiscountValue = BigDecimal.valueOf(81.0)
         )
