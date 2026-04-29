@@ -13,4 +13,4 @@ spring:
                 trace: false
                 web-allow-others: false
     main:
-        web-application-type: reactive
+        web-application-type: servlet
