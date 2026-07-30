@@ -22,12 +22,15 @@ dependencies {
 
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.springframework.boot:spring-boot-starter-webflux'
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
 
+    //MapStruct
+    implementation "org.mapstruct:mapstruct:${mapstructVersion}"
+    annotationProcessor "org.mapstruct:mapstruct-processor:${mapstructVersion}"
+    annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
+
     implementation "io.springfox:springfox-boot-starter:${swaggerVersion}"
-    implementation "io.springfox:springfox-spring-webflux:${swaggerVersion}"
 
     //H2
     implementation "com.h2database:h2:${h2Version}"

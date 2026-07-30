@@ -1,0 +1,121 @@
+# Review notes — Coupon Service
+
+*[Read this in English](REVIEW_en.md)*
+
+Registro de lo que hemos ido encontrando y cambiando, en el orden en que ha ido saliendo.
+
+----------------------------------------------------------
+- Se comprueba la version de java en el gradle. Se apuntó al Temurin 11 local.
+
+- La API compila y Arranca.Comprobamos endpoints:
+  - `/api/apply` → 404 NOT FOUND aunque el cupón exista en `data.sql`; 
+  - `/api/coupons` → 500 Investigamos la traza (Jackson no puede deserializar `CouponRequestDTO`, porque `@Builder` de Lombok sin `@NoArgsConstructor` suprime el constructor vacío que Jackson necesita);
+  - `/api/create` → Devuelve un 500
+  - `/h2-console` → 404 NOT FOUND. Primero no sabíamos el motivo hasta que probamos de comentar `web-application-type: reactive` forzado en `application.yml` que chillaba un montón, porque a priori no encontramos ninguna funcionalidad reactiva. Invertigamos y vemos que con `spring-boot-starter-web` + `spring-boot-starter-webflux` a la vez y usando JPA es incompatible y se desactiva el auto-config de la consola H2, que sólo funciona apis servlet. Se comentó esa línea para poder seguir diagnosticando.
+ ----------------------------------------------------------
+- Con la h2-console accesible, confirmamos que se crean dos tablas:
+    - la tabla `COUPON` (la entidad no tenía `@Table` y Hibernate la crea automáticamente vacía) 
+    - la tabla `COUPONS` que vemos que es la que hay que usar porque `data.sql` era la que usaba para las 3 filas de semilla. Por eso `/api/apply` siempre daba 404. Se observa carácteres extraños en el SQL.
+----------------------------------------------------------
+- Se comprueba que nada en el código use tipos reactivos. Se quitan `spring-boot-starter-webflux` y `springfox-spring-webflux` del `gradle`,  rebuild y la app sigue funcionando com Spring MVC clásico, Swagger y h2-console accesibles. Después se borró la línea comentada `web-application-type: reactive` del application.yml.
+----------------------------------------------------------
+- Buscamos Controlador. Se observan muchos errores a simple vista como el nombre de la clase, anotaciones antiguas, Falta de documentación OpenApi, uso de Objetos de dominio, persistencia y web todo en la misma capa, etc. Se decide ir por partes e intentar primero que los endpoints funcionen y hacemos estos primeros cambios en la clase:
+  - Renombramos `CouponResource` a `CouponResourceController` para seguir convención nomenclatura.
+  - Cambiamos anotación `@Controller` (antiguo MVC) a `@RestController` (el `List<Coupon>` crudo que devolvía `getCoupons()` no se serializaba bien con `@Controller` y no lo convierte en JSON).
+  - Estandarizamos por consistencia el retorno en ResponseEntity<T>. `getCoupons()` ahora devuelve `ResponseEntity<List<Coupon>>`.
+  - `create()` Cambiamos Status, para que devuelva el cupón creado con `201 Created` en vez de un `200` vacío.
+----------------------------------------------------------
+- Necesitamos un Control de Excepciones. Creamos un `GlobalExceptionHandler` con (`@RestControllerAdvice`). Mapeamos `NoSuchElementException` → `404` para el `RuntimeException` genérico del descuento negativo, eso necesita su propio tipo de excepción primero.
+----------------------------------------------------------
+- Añadimos `@Table(name = "coupons")` a la entidad, arreglamos el desajuste de tabla de la entrada anterior sobre h2-console.
+----------------------------------------------------------
+- Refactorizamos nombre de la entidad por nomenclatura `Coupon` a `CouponEntity`. cambiamos la referencia de la columna `minBasketValue` a `min_basket_value` porque sospechamos que la aplicación de cupon da 500 porque Hibernate intenta convertir la consulta con underscores
+----------------------------------------------------------
+- `apply()` tiene un diseño extraño. Decidimos que vamos a delegar la validacion a la libreria validation constraints. El caso basket=0 no se trata aparte — se resuelve solo dejando que la regla de `minBasketValue` decida (si no hay mínimo, pasa; si lo hay, 0 casi nunca lo cumple). Quitamos `else if (value == 0)`.
+----------------------------------------------------------
+- Añadida validación con Bean Validation en vez de un patrón Validator custom: 
+  - `@Positive`/`@NotBlank`/`@PositiveOrZero` en `CouponDTO`
+  - `@PositiveOrZero` en `Basket.value`, 
+  - `@Valid` en cascada sobre `ApplicationRequestDTO.basket` (antes faltaba, así que las anotaciones de `Basket` nunca se comprobaban). Esto deja sin sentido el catch de `NullPointerException` en `createCoupon()` lo quitramos porque ahora Spring rechaza el DTO inválido antes de llegar ahí.
+  - `CouponService.apply()` ahora lanza `MinBasketValueNotMetException` (nueva) cuando el basket no llega al mínimo del cupón, en vez de aplicar el descuento a ciegas o devolver el basket sin más. También desaparece el `System.out.println` + `RuntimeException` del importe negativo, porque `@PositiveOrZero` en `Basket.value` ya lo rechaza antes de llegar al service.
+----------------------------------------------------------
+- `GlobalExceptionHandler`: añadidos handlers para `ConstraintViolationException`, `MethodArgumentNotValidException` y `MinBasketValueNotMetException` (409, para mantener el mismo código que ya usaba el endpoint para "no se puede aplicar").
+----------------------------------------------------------
+- Simplificamos `CouponResourceController.apply()` por usar Validation. 
+----------------------------------------------------------
+- Añadimos `@Validated` en `CouponService` y anotamos los parámetros de sus métodos (`@Valid`/`@NotBlank`),por robustez y escalabilidad: si el día de mañana el servicio se llama desde otro sitio que no sea este controller — batch, otro servicio, un listener — la validación no depende solo del `@Valid` en el borde HTTP.
+----------------------------------------------------------
+- Modificamos la entidad. Añadido `@GeneratedValue(strategy = GenerationType.IDENTITY)` a `CouponEntity.id` (coincide con el `AUTO_INCREMENT` de `data.sql`) — arregla el bug de `/api/create`.
+----------------------------------------------------------
+- Añadido `@NoArgsConstructor`/`@AllArgsConstructor` a los DTOs que les faltaba (`CouponRequestDTO`, `CouponDTO`, `ApplicationRequestDTO`, `Basket`) — arregla el bug de deserialización de Jackson en `/api/coupons`.
+----------------------------------------------------------
+- Nota: en el log de arranque sale un warning de `spring.jpa.open-in-view is enabled by default` — pendiente de decidir si se desactiva explícitamente.
+----------------------------------------------------------
+- Refactorizamos el servicio: `CouponService` pasa a ser una interfaz, la implementación se mueve a `CouponServiceImpl` (paquete `impl`), y el controller inyecta la interfaz por constructor — principio de inversión de dependencias (SOLID). También renombrados los DTOs de entrada a nombres más verbosos: `ApplicationRequestDTO` → `ApplyCouponRequestDTO`, `CouponDTO` → `CreateCouponRequestDTO`, `CouponRequestDTO` → `GetCouponsRequestDTO`.
+----------------------------------------------------------
+- En `CouponResourceController` quitamos: `@RequiredArgsConstructor` e inyectamos el servicio por la interfaz.
+ ----------------------------------------------------------
+- Probados los tres endpoints tras el refactor: `/api/apply`, `/api/create`, `/api/coupons` — los tres devuelven ahora lo esperado (200/201/200, con 404 para código desconocido). Con esto quedan arreglados todos los bugs funcionales de la lista original.
+----------------------------------------------------------
+- Pendiente: `CouponServiceTest` dejamos tests para el final en lugar de ir cambiandolos en cada refactor, ya que `bootRun` no ejecuta los tests, así que no nos molesta de momento.
+----------------------------------------------------------
+- Bug nuevo: `createCoupon()` guardaba el código en minúsculas (`.toLowerCase()`) pero `findByCode` no normalizaba nada al buscar (cupón creado como `UPPERCASE1` no se podía aplicar buscando `UPPERCASE1`, 404). Arreglado cambiando `findByCode` → `findByCodeIgnoreCase` (Spring Data JPA) y cambiando el `.toLowerCase()` de `createCoupon()` a toUpperCase — estandarizamos: los códigos de cupón de tienda se suelen escribir en mayúsculas por convención, y evita tener una mezcla de mayúsculas/minúsculas en la BD que sea difícil de leer.
+---------------------------------------------------------- 
+- En el service `getCoupon()` ahora es `private` en `CouponServiceImpl` (no se usa desde fuera); `getCoupons()` reutiliza ese helper en vez de llamar al repositorio directamente.
+----------------------------------------------------------
+- Arreglamos el en el Controller. El `GET /api/coupons`, quitamos `@RequestBody` y el parametro se mueve `codes` a query params (`?codes=TEST1&codes=TEST2`), usando `@RequestParam @NotEmpty List<String> codes`. De paso así resolvemos también el acoplamiento service → web. Necesitaba `@Validated` en el controller por el antiguo parametro y ahora delegamos la calidacion en el service.
+----------------------------------------------------------
+- Arreglamos un poco el GlobalErrorHandler que hemos montado con respuestas de error inconsistentes: creamos nuevo DTO `ErrorResponse` (timestamp, status, error, message, mapa opcional de errores por campo) y los 4 handlers de `GlobalExceptionHandler` unificados para devolverlo siempre con la misma forma. De paso, añadido un `@ExceptionHandler(Exception.class)` catch-all que loguea la excepción en el server (`log.error`) y devuelve un 500 genérico con la misma forma, en vez del cuerpo de error por defecto de Spring.
+----------------------------------------------------------
+- Cambiado `getCoupons()`: un código que no existe ya no revienta toda la petición — se salta con un `log.warn` y sigue con el resto (usa `Optional.ifPresentOrElse`). Como consecuencia, `NoSuchElementException` ya no se lanza en ningún sitio de la app, así que se quita el handler `handleNotFound` del `GlobalExceptionHandler` (código muerto).
+----------------------------------------------------------
+- Arreglamos WARNING en el log de arranque: Añadido `spring.jpa.open-in-view: false` en `application.yml`, explícito en vez de dejar el valor por defecto de Spring Boot. (Esto es para que hibernate cierre la sesion de persistencia al salir de la capa de servicio y casi siempre tiene que estar desactivado)
+----------------------------------------------------------
+- De casualidad Hallazgo al mirar ejemplos en mi repositorio github: `database-platform: org.hibernate.dialect.H2Dialect` estaba anidado bajo `spring.datasource` en vez de `spring.jpa` (funcionaba por suerte porque Hibernate autodetecta el mismo dialecto).
+----------------------------------------------------------
+- Ahora que la api más o menos funciona regular decidimos arreglar el acoplamiento entre capas: 
+  - Reestructuramos los paquetes para separar bien las capas y preparar mappers entre ellas (MapStruct). 
+  - Resultado: `CouponEntity` se mueve a `core.persistence.entity`; 
+  - nuevos objetos de dominio `BasketDomain`/`CouponDomain` en `core.services.model.domain` (la capa de negocio ya no trabaja directamente con la entidad JPA); 
+  - nuevo `CreateCouponCommandDTO` en `core.services.model.command`; 
+  - DTOs de request/response separados en `web.dto.request`/`web.dto.response` (`BasketRequestDTO`, `CreateCouponRequestDTO`, `BasketResponse`, `CouponResponse`); 
+  - mappers dedicados en `core.persistence.mapper` (entidad - dominio) y `web.mapper` (request - dominio, dominio - response), con interfaces base genéricas (`RequestMapper`, `ResponseMapper`, `CommandMapper`, `DatabaseMapper`) para no repetir la forma de cada mapper.
+  - Añadida la dependencia de MapStruct a `build.gradle`/`gradle.properties` (`mapstruct` + `mapstruct-processor` + `lombok-mapstruct-binding`, esta última necesaria para que el procesador de MapStruct vea los getters/builder que genera Lombok). Todavía no está enchufado en el service/controller (lo dejamos para el siguiente paso).
+  - Soluncionamos bugs que generamos nuevos con `@AllArgsConstructor` y `@Builder` que si no los pones Mapstruct no encuentra el constructor.
+  - En el service, `apply()` ya no devuelve `Optional<BasketDomain>` al controller, devuelve `BasketDomain` directo. El caso "cupón no encontrado" ahora es una excepción nueva (`CouponNotFoundException` → 404)
+  - De paso, `apply()` ya convierte la entidad a `CouponDomain` vía `couponDataBaseMapper` antes de leer `minBasketValue`/`discount`, igual que `createCoupon()`/`getCoupons()` siendo consistente y trsbajando con objetos de dominio en lugar de persistencia.
+  - Renombrado y refactorizamos los sufijos de los DTOS para que sean consistentes en cada capa.
+  - Probam los tres endpoints tras el refactor de mapeo y los renames; todos devuelven datos reales, ningún campo null, y los errores salen con el `ErrorResponse` unificado. Doy por cerrado el refactor de capas/mappers.
+----------------------------------------------------------
+- Nos damos de que code no tiene constraint de restricción única en `code`, por lógica no tiene que haber códigos distintos con el mismo code y añadimos la cosntraint unique en la entity y el sql. Creamos también un handler de `DataIntegrityViolationException` en `GlobalExceptionHandler` (409 "Coupon code already exists"), para que al crear un cupón duplicado dé un error claro en vez de un 500.
+----------------------------------------------------------
+- El el service, `createCoupon()` modificamos para que siga siendo consistente y trabajando con objetos de dominio, antes construía `CouponEntity` a mano y ahora monta un `CouponDomain` y usa el mapper para transformarlo a entity.
+----------------------------------------------------------
+- Añadido Javadoc corto y en tono normal. No intentamos ser muy descriptivos ni muy técnicos para no perder tiempo, sólo quiero dejar constancia para que el evaluado vea que sabemos que el javadoc es importante.
+---------------------------------------------------------- 
+- Añadimos tests Unitarios, sólo añadimos en el servicio ya que es la unica clase con lógica de negocio. En este punto cabe decir que en un entorno real configurarioamos sonarQube que seguro que lo usamos para que ignore la cobertura de DTOs, mappers, POJOs y clases sin logica; En el test cambiamos `SpringExtension` por `MockitoExtension` (no necesitamos cargar todo el contexto). Un `@Nested` por método y nombres tipo `givenXxxWhenXxxThenXxx` para testear la casuística.
+----------------------------------------------------------
+- Al intentar correr los tests completos con la suite completa, nos sale `CouponApplicationTests.contextLoads()`. No lo había visto antes porque nunca habíamos ejecutado los tests con `./gradlew test`, sólo la app vía `bootRun`. Investigamos y vemos que la causa estaba en `data.sql`, los carácteres raros que habíamos visto al principio.
+----------------------------------------------------------
+- Añadidos el primer test de integración del proyecto: `CouponResourceControllerIntegrationTest`. `@SpringBootTest(webEnvironment = MOCK)` + `@AutoConfigureMockMvc` contra la H2 en memoria con los datos semilla `data.sql` y `@Transactional` en la clase para que cada test haga rollback al terminar. Lo hacemos así por perder tiempo montando containers o servicios fake.
+----------------------------------------------------------
+- Gracias al test nos damos cuenta de que podemos mejorar `GlobalExceptionHandler`, añadiendo mapeos para `MissingServletRequestParameterException` y `HttpMessageNotReadableException`
+----------------------------------------------------------
+- Arreglamos `getCoupons()` que hace un `findByCodeIgnoreCase` por cada código dentro de un `forEach`, lo vi antes pero lo he ido dejando de lado arreglando otras cosas. Añadimos un metodo `findByCodeIgnoreCaseIn(Lis<String> codes)` para tener una sola consulta. No tiene mucho sentido crear logica para mantener el `log.warn` por cada código no encontrado que había en la versión anterior y lo quitamos; `getCoupon(code)` lo dejamos igual porque lo sigue usando `apply()`. Actualizamos los test para adaptar el cambio.
+----------------------------------------------------------
+- Con el paso anterior tambien arreglamos que `getCoupons` podia devolver códigos repetidos.
+----------------------------------------------------------
+- Añadimos  @Size(max = 250) en la request i el command de crear Cupon ya que antes no la habíamos tenido en cuenta esta restricción de validación
+----------------------------------------------------------
+- Quitamos el `@Data` de `CouponEntity` porque es un antipatrón (@Data en una Entity genera equals(), hashCode() y toString() con todas las relaciones, lo que provoca problemas graves con JPA). Añadimos `@Getter` + `@Setter`
+----------------------------------------------------------
+- Revisando nos hemos dado cuenta de que `apply()` nunca calculaba el precio final de la cesta con descuento. `BasketDomain.applyDiscount()` solo marcaba `applicationSuccessful=true` y guardaba el `discount` del cupón tal cual. Alomejor es decision de diseño que que se calcule en la parte cliente, pero no hay contrato ni sabemos nada; Asumimos que es un error a posta y debemos calcularlo. Decidimos asumir `discount` como porcentaje porque encaja mejor con los datos de semilla. Se añade un campo nuevo `finalValue` y se mantiene el valor anterior.
+----------------------------------------------------------
+- Documentación Swagger añadida en el controller.
+----------------------------------------------------------
+- Nos damos cuenta de que no contemplamos obtener todos los códigos para saber los disponibles. Quitamos `@NotEmpty` de las validaciones y llamamos `couponRepository.findAll()` cuando no hay codigos.
+---------------------------------------------------------- 
+- Nos damos cuenta de que hemos asumido que `discount` es un porcentaje pero no lo hemos resdtringido para que no passe de 100. Añadido `@DecimalMax("100")` en las validaciones.
+
+----------------------------------------------------------
+- Añadido dockerFile para facilitar validacion de la prueba

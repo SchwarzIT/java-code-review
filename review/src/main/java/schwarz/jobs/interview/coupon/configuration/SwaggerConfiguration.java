@@ -9,6 +9,9 @@ import springfox.documentation.builders.RequestHandlerSelectors;
 import springfox.documentation.spi.DocumentationType;
 import springfox.documentation.spring.web.plugins.Docket;
 
+/**
+ * Turns on the Swagger UI for this API.
+ */
 @Configuration
 public class SwaggerConfiguration {
 

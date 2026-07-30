@@ -3,6 +3,9 @@ package schwarz.jobs.interview.coupon;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+/**
+ * Entry point for the coupon service.
+ */
 @SpringBootApplication
 public class CouponApplication {
 
