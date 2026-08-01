@@ -5,6 +5,9 @@ spring:
         username: sa
         password: password
         database-platform: org.hibernate.dialect.H2Dialect
+    jpa:
+        hibernate:
+            ddl-auto: none
     h2:
         console:
             enabled: true
@@ -12,5 +15,3 @@ spring:
             settings:
                 trace: false
                 web-allow-others: false
-    main:
-        web-application-type: reactive
