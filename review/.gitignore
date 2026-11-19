@@ -120,9 +120,6 @@ cmake-build-*/
 # File-based project format
 *.iws
 
-# IntelliJ
-out/
-
 # mpeltonen/sbt-idea plugin
 .idea_modules/
 
@@ -252,3 +249,6 @@ gradle-app.setting
 *.iml
 dist.zip
 **/logs/**
+
+### Generated in CI for Trivy ###
+gradle.lockfile

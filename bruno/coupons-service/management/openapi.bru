@@ -1,0 +1,17 @@
+meta {
+  name: openapi
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{protocol}}://{{host}}:{{port}}/v3/api-docs
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+  forwardAuthorizationHeader: false
+}

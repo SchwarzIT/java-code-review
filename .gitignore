@@ -1,0 +1,41 @@
+.gradle
+build/
+out/
+!gradle/wrapper/gradle-wrapper.jar
+.vscode/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+**/bin
+
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### Terraform ###
+.terraform
+
+### NetBeans ###
+nbproject/private/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+
+### Mac ###
+.DS_Store
+
+#Exclude local settings
+proxy.properties
+/app/src/main/generated/
+app/src/main/resources/application-local.yml
+/.idea/
+/.idea/

@@ -1,0 +1,37 @@
+name: Build
+
+on:
+  push:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: review
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: corretto
+          java-version: 25
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Generate Gradle lockfiles for Trivy
+        run: ./gradlew dependencies :api:dependencies :app:dependencies --write-locks -q > /dev/null
+      - run: ./gradlew clean build
+      - name: Generate dependency tree
+        run: ./gradlew dependencies :api:dependencies :app:dependencies -q > dependency-tree.txt
+      - name: Upload dependency tree
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-tree
+          path: review/dependency-tree.txt
+      - name: Scan dependencies with Trivy
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: review
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: '1'

@@ -1,0 +1,28 @@
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'com.github.spotbugs'
+
+    dependencies {
+        spotbugs "com.github.spotbugs:spotbugs:${spotbugs.toolVersion.get()}"
+        compileOnly "com.github.spotbugs:spotbugs:${spotbugs.toolVersion.get()}"
+        testCompileOnly "com.github.spotbugs:spotbugs:${spotbugs.toolVersion.get()}"
+    }
+
+    spotbugs {
+        ignoreFailures = true
+        showStackTraces = true
+        showProgress = true
+
+
+        reportsDir = file("${project.layout.buildDirectory.get().asFile}/spotbugs")
+        maxHeapSize = '1g'
+        extraArgs = ['-nested:false']
+    }
+
+    spotbugsMain {
+        enabled = false
+    }
+    spotbugsTest {
+        enabled = false
+    }
+}

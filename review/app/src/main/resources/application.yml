@@ -1,0 +1,19 @@
+management:
+  endpoints:
+    access.default: none
+    web:
+      exposure:
+        include: health,info,prometheus,refresh,configprops
+  endpoint:
+    loggers:
+      access: read-only
+    health:
+      access: read-only
+    info:
+      access: read-only
+    metrics:
+      access: read-only
+    prometheus:
+      access: read-only
+    configprops:
+      access: read-only

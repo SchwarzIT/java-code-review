@@ -1,0 +1,23 @@
+meta {
+  name: create_basket
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{protocol}}://{{host}}:{{port}}/{{context_path}}/{{baskets_context_path}}
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "value": "100.00",
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+  forwardAuthorizationHeader: false
+}
