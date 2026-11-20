@@ -1,0 +1,31 @@
+meta {
+  name: basket_discount_by_coupon_code
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{protocol}}://{{host}}:{{port}}/{{context_path}}/{{baskets_context_path}}/:basketid/{{coupons_context_path}}/:code
+  body: json
+  auth: inherit
+}
+
+params:path {
+  code: TESTCODE2
+  basketid: 2
+}
+
+body:json {
+  {
+    "code": "TEST1",
+    "basket": {
+        "value": "100.00"
+    }
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+  forwardAuthorizationHeader: false
+}

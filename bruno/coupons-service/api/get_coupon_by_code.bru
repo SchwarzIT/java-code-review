@@ -1,0 +1,21 @@
+meta {
+  name: get_coupon_by_code
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{protocol}}://{{host}}:{{port}}/{{context_path}}/{{coupons_context_path}}/:code
+  body: none
+  auth: inherit
+}
+
+params:path {
+  code: TEST1
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+  forwardAuthorizationHeader: false
+}

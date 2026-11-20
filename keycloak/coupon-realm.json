@@ -1,0 +1,75 @@
+{
+  "realm": "coupon",
+  "enabled": true,
+  "sslRequired": "none",
+  "roles": {
+    "realm": [
+      {
+        "name": "coupon_admin",
+        "description": "Can call all coupon REST APIs"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "coupon-client",
+      "name": "Coupon showcase client",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "coupon-client-secret",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "redirectUris": [
+        "http://localhost:8081/*"
+      ],
+      "webOrigins": [
+        "+"
+      ],
+      "defaultClientScopes": [
+        "coupon_admin"
+      ],
+      "optionalClientScopes": []
+    }
+  ],
+  "users": [
+    {
+      "username": "coupon-admin",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Coupon",
+      "lastName": "Admin",
+      "email": "coupon-admin@example.com",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "admin",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "coupon_admin"
+      ]
+    },
+    {
+      "username": "service-account-coupon-client",
+      "enabled": true,
+      "serviceAccountClientId": "coupon-client",
+      "realmRoles": [
+        "coupon_admin"
+      ]
+    }
+  ],
+  "clientScopes": [
+    {
+      "name": "coupon_admin",
+      "description": "Allows calling all coupon REST APIs",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "false"
+      }
+    }
+  ]
+}

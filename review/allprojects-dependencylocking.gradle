@@ -1,0 +1,5 @@
+allprojects {
+    dependencyLocking {
+        lockAllConfigurations()
+    }
+}

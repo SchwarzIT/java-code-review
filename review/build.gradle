@@ -1,12 +1,12 @@
 plugins {
-    id 'org.springframework.boot' version '2.2.5.RELEASE'
-    id 'io.spring.dependency-management' version '1.0.9.RELEASE'
-    id 'java'
+    id "java"
+    id "org.springframework.boot" version "${springbootVersion}" apply false
+    id "io.spring.dependency-management" version "${springDependencyManagementVersion}" apply false
+    id "com.github.spotbugs" version "${spotbugsVersion}" apply false
 }
 
-group = 'schwarz.jobs.interview'
+group = 'de.schwarz.jobs.interview'
 version = '0.0.1-SNAPSHOT'
-sourceCompatibility = '11'
 
 configurations {
     compileOnly {
@@ -14,29 +14,14 @@ configurations {
     }
 }
 
-repositories {
-    mavenCentral()
-}
-
-dependencies {
-
-    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-    implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.springframework.boot:spring-boot-starter-webflux'
-    compileOnly 'org.projectlombok:lombok'
-    annotationProcessor 'org.projectlombok:lombok'
-
-    implementation "io.springfox:springfox-boot-starter:${swaggerVersion}"
-    implementation "io.springfox:springfox-spring-webflux:${swaggerVersion}"
-
-    //H2
-    implementation "com.h2database:h2:${h2Version}"
-
-    testImplementation('org.springframework.boot:spring-boot-starter-test') {
-        exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+allprojects {
+    repositories {
+        mavenCentral()
     }
 }
 
-test {
-    useJUnitPlatform()
-}
+apply from: 'checkstyle.gradle'
+apply from: 'spotbugs.gradle'
+apply from: 'subprojects-plugins.gradle'
+apply from: 'allprojects-repositories.gradle'
+apply from: 'allprojects-dependencylocking.gradle'

@@ -1,0 +1,25 @@
+meta {
+  name: create_coupon
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{protocol}}://{{host}}:{{port}}/{{context_path}}/{{coupons_context_path}}
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "code": "TESTCODE2",
+    "discount": "10.00",
+    "minBasketValue": "500.00"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+  forwardAuthorizationHeader: false
+}

@@ -1,0 +1,17 @@
+subprojects {
+    apply plugin: 'checkstyle'
+
+    configurations {
+        checkstyleConfig
+    }
+
+    dependencies {
+        checkstyleConfig("com.puppycrawl.tools:checkstyle:${checkstyleVersion}") { transitive = false }
+    }
+
+    checkstyle {
+        toolVersion = checkstyleVersion
+        configFile = new File(project.rootDir, 'checkstyle.xml')
+        maxWarnings = 0
+    }
+}
